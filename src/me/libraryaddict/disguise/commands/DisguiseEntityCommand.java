@@ -3,9 +3,10 @@ package me.libraryaddict.disguise.commands;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-
+import me.libraryaddict.disguise.DisallowedDisguises;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -23,8 +24,10 @@ import me.libraryaddict.disguise.utilities.DisguiseParser.DisguiseParseException
 import me.libraryaddict.disguise.utilities.DisguiseParser.DisguisePerm;
 import me.libraryaddict.disguise.utilities.ReflectionFlagWatchers;
 import me.libraryaddict.disguise.utilities.ReflectionFlagWatchers.ParamInfo;
+import org.bukkit.entity.Entity;
 
 public class DisguiseEntityCommand extends DisguiseBaseCommand implements TabCompleter {
+
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!(sender instanceof Player)) {
@@ -32,16 +35,13 @@ public class DisguiseEntityCommand extends DisguiseBaseCommand implements TabCom
             return true;
         }
 
-        if (getPermissions(sender).isEmpty()) {
-            sender.sendMessage(ChatColor.RED + "You are forbidden to use this command.");
-            return true;
+        if (args.length >= 2) {
+            if (args[1].contains(":")) {
+                sender.sendMessage("That disguise is forbidden.");
+                return true;
+            }
         }
-
-        if (args.length == 0) {
-            sendCommandUsage(sender, getPermissions(sender));
-            return true;
-        }
-
+        
         Disguise disguise;
 
         try {
@@ -58,10 +58,49 @@ public class DisguiseEntityCommand extends DisguiseBaseCommand implements TabCom
             ex.printStackTrace();
             return true;
         }
+        
+        if (Arrays.toString(args).toLowerCase().contains("item_frame")) {
+            sender.sendMessage(ChatColor.RED + "That disguise is forbidden.");
+            return true;
+        }
 
-        LibsDisguises.getInstance().getListener().setDisguiseEntity(sender.getName(), disguise);
+        if (Arrays.toString(args).toLowerCase().contains("itemframe")) {
+            sender.sendMessage(ChatColor.RED + "That disguise is forbidden.");
+            return true;
 
-        sender.sendMessage(ChatColor.RED + "Right click an entity in the next " + DisguiseConfig.getDisguiseEntityExpire()
+        }
+
+        if (Arrays.toString(args).toLowerCase().contains("portal")) {
+            sender.sendMessage(ChatColor.RED + "That disguise is forbidden.");
+            return true;
+        }
+
+        if (Arrays.toString(args).toLowerCase().contains("hay_block")) {
+            sender.sendMessage(ChatColor.RED + "That disguise is forbidden.");
+            return true;
+        }
+
+        if (Arrays.toString(args).contains("fire")) {
+            sender.sendMessage(ChatColor.RED + "That disguise is forbidden.");
+        }
+
+        if (Arrays.toString(args).contains("carrot")) {
+            sender.sendMessage(ChatColor.RED + "That disguise is forbidden.");
+            return true;
+        }
+
+        if (!DisallowedDisguises.disabled) {
+            if (DisallowedDisguises.isAllowed(disguise)) {
+                LibsDisguises.getInstance().getListener().setDisguiseEntity(sender.getName(), disguise);
+            } else {
+                sender.sendMessage(ChatColor.RED + "That disguise is forbidden.");
+                return true;
+            }
+        } else {
+            sender.sendMessage(ChatColor.RED + "Disguises are disabled.");
+            return true;
+        }
+        sender.sendMessage(ChatColor.RED + "Right click a entity in the next " + DisguiseConfig.getDisguiseEntityExpire()
                 + " seconds to disguise it as a " + disguise.getType().toReadable() + "!");
         return true;
     }
@@ -82,27 +121,27 @@ public class DisguiseEntityCommand extends DisguiseBaseCommand implements TabCom
             for (String type : getAllowedDisguises(perms)) {
                 tabs.add(type);
             }
-        }
-        else {
+        } else {
             DisguisePerm disguiseType = DisguiseParser.getDisguisePerm(args[0]);
 
-            if (disguiseType == null)
+            if (disguiseType == null) {
                 return filterTabs(tabs, origArgs);
+            }
 
             if (args.length == 1 && disguiseType.getType() == DisguiseType.PLAYER) {
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     tabs.add(player.getName());
                 }
-            }
-            else {
+            } else {
                 ArrayList<String> usedOptions = new ArrayList<String>();
 
                 for (Method method : ReflectionFlagWatchers.getDisguiseWatcherMethods(disguiseType.getWatcherClass())) {
                     for (int i = disguiseType.getType() == DisguiseType.PLAYER ? 2 : 1; i < args.length; i++) {
                         String arg = args[i];
 
-                        if (!method.getName().equalsIgnoreCase(arg))
+                        if (!method.getName().equalsIgnoreCase(arg)) {
                             continue;
+                        }
 
                         usedOptions.add(arg);
                     }
@@ -117,19 +156,17 @@ public class DisguiseEntityCommand extends DisguiseBaseCommand implements TabCom
                         ParamInfo info = ReflectionFlagWatchers.getParamInfo(disguiseType, prevArg);
 
                         if (info != null) {
-                            if (info.getParamClass() != boolean.class)
+                            if (info.getParamClass() != boolean.class) {
                                 addMethods = false;
+                            }
 
                             if (info.isEnums()) {
                                 for (String e : info.getEnums(origArgs[origArgs.length - 1])) {
                                     tabs.add(e);
                                 }
-                            }
-                            else {
-                                if (info.getParamClass() == String.class) {
-                                    for (Player player : Bukkit.getOnlinePlayers()) {
-                                        tabs.add(player.getName());
-                                    }
+                            } else if (info.getParamClass() == String.class) {
+                                for (Player player : Bukkit.getOnlinePlayers()) {
+                                    tabs.add(player.getName());
                                 }
                             }
                         }

@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import me.libraryaddict.disguise.DisallowedDisguises;
 
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -39,13 +40,13 @@ public abstract class DisguiseBaseCommand implements CommandExecutor {
     protected ArrayList<String> getAllowedDisguises(HashMap<DisguisePerm, HashMap<ArrayList<String>, Boolean>> hashMap) {
         ArrayList<String> allowedDisguises = new ArrayList<>();
 
-        for (DisguisePerm type : hashMap.keySet()) {
-            if (type.isUnknown())
-                continue;
-
-            allowedDisguises.add(type.toReadable().replaceAll(" ", "_"));
+        for (DisguisePerm type : hashMap.keySet())
+        {
+            if (DisallowedDisguises.isAllowed(type) && !type.isUnknown())
+            {
+                allowedDisguises.add(type.toReadable().replaceAll(" ", "_"));
+            }
         }
-
         Collections.sort(allowedDisguises, String.CASE_INSENSITIVE_ORDER);
 
         return allowedDisguises;

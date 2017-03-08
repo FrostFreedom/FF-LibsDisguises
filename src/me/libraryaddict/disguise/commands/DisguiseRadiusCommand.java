@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import me.libraryaddict.disguise.DisallowedDisguises;
 
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
@@ -185,8 +186,21 @@ public class DisguiseRadiusCommand extends DisguiseBaseCommand implements TabCom
                         }
                     }
                 }
-
-                DisguiseAPI.disguiseToAll(entity, disguise);
+                if (!DisallowedDisguises.disabled)
+                {
+                    if (DisallowedDisguises.isAllowed(disguise))
+                    {
+                        DisguiseAPI.disguiseToAll(entity, disguise);
+                    } else
+                    {
+                        sender.sendMessage(ChatColor.RED + "That disguise is forbidden.");
+                        return true;
+                    }
+                } else
+                {
+                    sender.sendMessage(ChatColor.RED + "Disguises are disabled.");
+                    return true;
+                }
 
                 if (disguise.isDisguiseInUse()) {
                     disguisedEntitys++;
